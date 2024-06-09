@@ -1,0 +1,95 @@
+#include "speech.nvgt"
+
+interface state {
+    void on_push();
+    void on_pop();
+    void on_update();
+};
+
+class state_manager {
+    int current_state; // will be used to keep track of which state is active
+    state@[] stack;    // where we store states on
+
+    state_manager() {
+        current_state = -1; // Start with no active state
+    }
+
+    // Push to the state_manager
+    void push(state@ state) {
+        if (current_state != -1) {
+            stack[current_state].on_pop();
+        }
+        stack.insert_last(state);
+        current_state = stack.length() - 1;
+        stack[current_state].on_push();
+    }
+
+    // Pop from stack
+    void pop() {
+        if (current_state != -1) {
+            stack[current_state].on_pop();
+            stack.remove_at(stack.length() - 1);
+            current_state = stack.length() - 1;
+            if (current_state != -1) {
+                stack[current_state].on_push();
+            }
+        }
+    }
+
+    // Update
+    void update() {
+        if (current_state != -1) {
+            stack[current_state].on_update();
+        }
+    }
+}
+
+state_manager sm;
+state1 s;
+state2 s2;
+
+class state1:state {
+    void on_push() {
+        speak("State 1 Pushed!");
+    }
+
+    void on_pop() {
+        speak("State1 Popped!");
+    }
+
+    void on_update() {
+        if (key_pressed(KEY_SPACE)) {
+            sm.push(s2);
+        }
+    }
+}
+
+
+class state2:state {
+    void on_push() {
+        speak("State2 Pushed!");
+    }
+
+    void on_pop() {
+        speak("State2 Popped!");
+    }
+
+    void on_update() {
+        if (key_pressed(KEY_ESCAPE)) {
+            sm.pop();
+        }
+    }
+}
+
+// Example usage
+void main() {
+    sm.push(s);
+    show_window("State test");
+    while (true) {
+        wait(5);
+        sm.update();
+        if (key_pressed(KEY_ESCAPE)) {
+            exit();
+        }
+    }
+    }
